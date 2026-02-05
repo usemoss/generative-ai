@@ -7,7 +7,7 @@ window.addEventListener("load", (event) => {
 
 const PROXY_URL = "ws://localhost:8080";
 const PROJECT_ID = "gen-lang-client-0390334955";
-const MODEL = "gemini-2.0-flash-live-preview-04-09";
+const MODEL = "gemini-live-2.5-flash-native-audio";
 const API_HOST = "us-central1-aiplatform.googleapis.com";
 
 const accessTokenInput = document.getElementById("token");
@@ -41,7 +41,10 @@ geminiLiveApi.addFunction(new GetWeatherTool());
 geminiLiveApi.addFunction(new SearchWebTool());
 geminiLiveApi.addFunction(new CalculatorTool());
 
-console.log("Registered tools:", geminiLiveApi.functions.map(f => f.name));
+console.log(
+    "Registered tools:",
+    geminiLiveApi.functions.map((f) => f.name),
+);
 
 geminiLiveApi.onErrorMessage = (message) => {
     showDialogWithMessage(message);
@@ -65,7 +68,8 @@ function getSelectedResponseModality() {
 }
 
 function getSystemInstructions() {
-    const userInstructions = systemInstructionsInput.value || "You are a helpful AI assistant.";
+    const userInstructions =
+        systemInstructionsInput.value || "You are a helpful AI assistant.";
 
     // Automatically append tool usage instructions
     const toolInstructions = `
@@ -163,15 +167,26 @@ let manualMicControl = false; // Track if user manually toggled mic
 geminiLiveApi.onReceiveResponse = (messageResponse) => {
     if (messageResponse.type == "AUDIO") {
         // Calculate TTFB (Time To First Byte) - only for first audio chunk
-        if (geminiLiveApi.firstAudioReceivedTime === null && geminiLiveApi.lastAudioSentTime !== null) {
+        if (
+            geminiLiveApi.firstAudioReceivedTime === null &&
+            geminiLiveApi.lastAudioSentTime !== null
+        ) {
             geminiLiveApi.firstAudioReceivedTime = messageResponse.receivedTime;
-            const ttfb = geminiLiveApi.firstAudioReceivedTime - geminiLiveApi.lastAudioSentTime;
-            console.log(`%c🚀 TTFB (Time To First Byte): ${ttfb.toFixed(2)}ms | Formula: (First Audio Received - Last Audio Sent)`, "background: #ff922b; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 13px;");
+            const ttfb =
+                geminiLiveApi.firstAudioReceivedTime -
+                geminiLiveApi.lastAudioSentTime;
+            console.log(
+                `%c🚀 TTFB (Time To First Byte): ${ttfb.toFixed(2)}ms | Formula: (First Audio Received - Last Audio Sent)`,
+                "background: #ff922b; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 13px;",
+            );
         }
 
         // Auto-mute microphone while AI is speaking to prevent feedback loop
         if (!isAISpeaking && !manualMicControl) {
-            console.log("%c🔇 MIC AUTO-MUTED → AI is speaking", "background: #ff6b6b; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px;");
+            console.log(
+                "%c🔇 MIC AUTO-MUTED → AI is speaking",
+                "background: #ff6b6b; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px;",
+            );
             isAISpeaking = true;
             liveAudioInputManager.disconnectMicrophone();
         }
@@ -181,7 +196,10 @@ geminiLiveApi.onReceiveResponse = (messageResponse) => {
         clearTimeout(window.aiSpeakingTimeout);
         window.aiSpeakingTimeout = setTimeout(() => {
             if (!manualMicControl) {
-                console.log("%c🎤 MIC AUTO-UNMUTED → AI finished", "background: #51cf66; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px;");
+                console.log(
+                    "%c🎤 MIC AUTO-UNMUTED → AI finished",
+                    "background: #51cf66; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px;",
+                );
                 isAISpeaking = false;
                 liveAudioInputManager.connectMicrophone();
                 // Reset TTFB timer for next interaction
@@ -189,26 +207,53 @@ geminiLiveApi.onReceiveResponse = (messageResponse) => {
             }
         }, 1500); // Wait 1.5 seconds after last audio chunk
     } else if (messageResponse.type == "TEXT") {
-        console.log("%c💬 AI TEXT RESPONSE", "background: #339af0; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px;", messageResponse.data);
+        console.log(
+            "%c💬 AI TEXT RESPONSE",
+            "background: #339af0; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px;",
+            messageResponse.data,
+        );
         newModelMessage(messageResponse.data);
     } else if (messageResponse.type == "TOOL_CALL") {
-        console.log("\n%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "color: #ff6b6b; font-weight: bold;");
-        console.log("%c🛠️  TOOL CALL RECEIVED", "background: #ff6b6b; color: white; font-weight: bold; font-size: 14px; padding: 6px 12px; border-radius: 4px;");
+        console.log(
+            "\n%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            "color: #ff6b6b; font-weight: bold;",
+        );
+        console.log(
+            "%c🛠️  TOOL CALL RECEIVED",
+            "background: #ff6b6b; color: white; font-weight: bold; font-size: 14px; padding: 6px 12px; border-radius: 4px;",
+        );
 
         // Calculate tool call detection time (from last audio sent to tool call received)
-        if (geminiLiveApi.lastAudioSentTime !== null && messageResponse.receivedTime !== null) {
-            const toolCallDetectionTime = messageResponse.receivedTime - geminiLiveApi.lastAudioSentTime;
-            console.log(`%c🎯 Tool Call Detection Time: ${toolCallDetectionTime.toFixed(2)}ms | Formula: (Tool Call Received - Last Audio Sent)`, "background: #ff922b; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 13px;");
+        if (
+            geminiLiveApi.lastAudioSentTime !== null &&
+            messageResponse.receivedTime !== null
+        ) {
+            const toolCallDetectionTime =
+                messageResponse.receivedTime - geminiLiveApi.lastAudioSentTime;
+            console.log(
+                `%c🎯 Tool Call Detection Time: ${toolCallDetectionTime.toFixed(2)}ms | Formula: (Tool Call Received - Last Audio Sent)`,
+                "background: #ff922b; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 13px;",
+            );
         }
 
         // Calculate round-trip time
-        if (geminiLiveApi.lastMessageTime !== null && messageResponse.receivedTime !== null) {
-            const roundTripTime = messageResponse.receivedTime - geminiLiveApi.lastMessageTime;
-            console.log(`%c⚡ Round-trip time: ${roundTripTime.toFixed(2)}ms | Formula: (Response Received - Last Message Sent)`, "color: #ffd43b; font-weight: bold;");
+        if (
+            geminiLiveApi.lastMessageTime !== null &&
+            messageResponse.receivedTime !== null
+        ) {
+            const roundTripTime =
+                messageResponse.receivedTime - geminiLiveApi.lastMessageTime;
+            console.log(
+                `%c⚡ Round-trip time: ${roundTripTime.toFixed(2)}ms | Formula: (Response Received - Last Message Sent)`,
+                "color: #ffd43b; font-weight: bold;",
+            );
         }
 
         const functionCalls = messageResponse.data.functionCalls;
-        console.log(`%c📊 Number of tools to execute: ${functionCalls.length}`, "color: #ff6b6b; font-weight: bold;");
+        console.log(
+            `%c📊 Number of tools to execute: ${functionCalls.length}`,
+            "color: #ff6b6b; font-weight: bold;",
+        );
 
         for (let i = 0; i < functionCalls.length; i++) {
             const functionCall = functionCalls[i];
@@ -216,8 +261,15 @@ geminiLiveApi.onReceiveResponse = (messageResponse) => {
             const functionName = functionCall.name;
             const parameters = functionCall.args;
 
-            console.log(`\n%c▶ EXECUTING TOOL #${i + 1}: ${functionName}`, "background: #7950f2; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px;");
-            console.log("%c📥 Parameters:", "color: #7950f2; font-weight: bold;", parameters);
+            console.log(
+                `\n%c▶ EXECUTING TOOL #${i + 1}: ${functionName}`,
+                "background: #7950f2; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px;",
+            );
+            console.log(
+                "%c📥 Parameters:",
+                "color: #7950f2; font-weight: bold;",
+                parameters,
+            );
 
             // Measure tool execution time
             const toolStartTime = performance.now();
@@ -226,14 +278,31 @@ geminiLiveApi.onReceiveResponse = (messageResponse) => {
             const toolExecutionTime = toolEndTime - toolStartTime;
 
             // Send tool response back to the API
-            geminiLiveApi.sendToolResponse(functionCallId, functionName, result);
+            geminiLiveApi.sendToolResponse(
+                functionCallId,
+                functionName,
+                result,
+            );
 
-            console.log("%c✅ SUCCESS!", "background: #51cf66; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px;");
-            console.log("%c📤 Result:", "color: #51cf66; font-weight: bold;", result);
-            console.log(`%c⏱️  Execution time: ${toolExecutionTime.toFixed(2)}ms | Formula: (Tool End - Tool Start)`, "color: #ffd43b; font-weight: bold;");
+            console.log(
+                "%c✅ SUCCESS!",
+                "background: #51cf66; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px;",
+            );
+            console.log(
+                "%c📤 Result:",
+                "color: #51cf66; font-weight: bold;",
+                result,
+            );
+            console.log(
+                `%c⏱️  Execution time: ${toolExecutionTime.toFixed(2)}ms | Formula: (Tool End - Tool Start)`,
+                "color: #ffd43b; font-weight: bold;",
+            );
         }
 
-        console.log("%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n", "color: #51cf66; font-weight: bold;");
+        console.log(
+            "%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n",
+            "color: #51cf66; font-weight: bold;",
+        );
     }
 };
 

@@ -138,9 +138,9 @@ class GeminiLiveAPI {
 
         // Add tools if any are registered
         if (tools.length > 0) {
-            sessionSetupMessage.setup.tools = {
-                function_declarations: tools
-            };
+            sessionSetupMessage.setup.tools = [{
+                functionDeclarations: tools
+            }];
             console.log("Registering tools:", tools);
         }
 
@@ -213,9 +213,7 @@ class GeminiLiveAPI {
                     {
                         id: functionCallId,
                         name: functionName,
-                        response: {
-                            output: typeof result === 'object' ? result : { result: result }
-                        }
+                        response: typeof result === 'object' ? result : { result: result }
                     }
                 ]
             }
